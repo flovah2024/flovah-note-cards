@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="card-slug" content="flovah-note-small-projects">
+<meta name="card-version" content="4">
+<meta name="card-backgrounds" content="../assets/small-projects-a.png,../assets/small-projects-b.png,../assets/small-projects-c.png">
+<title>FLOVAH NOTE — 큰 프로젝트는 작은 프로젝트가 데려옵니다</title>
+<link rel="stylesheet" href="../style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="tb-title">Flovah Note · No.08 — 작은 프로젝트</span>
+  <a class="tb-btn" href="../index.html">← 허브</a>
+  <button class="tb-btn active" id="btn-grid">전체 보기</button>
+  <button class="tb-btn" id="btn-single">개별 보기</button>
+  <button class="tb-btn" id="btn-edit">편집</button>
+  <button class="tb-btn" id="btn-flip-all">배경 전체 반전</button>
+  <button class="tb-btn" id="btn-save-all">전체 PNG 저장</button>
+  <button class="tb-btn" id="btn-reset">초기화</button>
+</div>
+
+<div class="deck">
+
+  <!-- 01 표지 · dark -->
+  <div class="slide dark">
+    <div class="s-bg"><img src="../assets/small-projects-a.png" alt=""></div>
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-cover-title">큰 프로젝트는<br><span class="accent">작은 프로젝트가<br>데려옵니다</span></div>
+    <div class="s-cover-sub">영업보다 정확한 영업.<br>30초 영상이 CES까지 간 이야기.</div>
+    <div class="s-bottom"><img class="s-logo" src="../logo-light.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 02 · paper -->
+  <div class="slide paper">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">01 · 고백</div>
+    <div class="s-title">우리는 영업을<br>잘하는 회사가 아닙니다</div>
+    <div class="s-body">제안서를 화려하게 쓰는 회사도 아닙니다.<br>그런데 다음 일은 늘 찾아왔습니다.<br><br><strong>돌아보면 다음 프로젝트는<br>언제나 <span class="accent">지난 결과물</span>이 데려왔습니다.</strong></div>
+    <div class="s-bottom"><img class="s-logo" src="../logo.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 03 · dark -->
+  <div class="slide dark">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">02 · 시작</div>
+    <div class="s-title">시작은<br>30초였습니다</div>
+    <div class="s-blocks">
+      <div class="s-block">의뢰는 단순했습니다<br><strong>내부 R&amp;D 공유용 영상 한 편</strong></div>
+      <div class="s-block">예산도, 기간도, 분량도<br><strong>모든 게 작은 프로젝트</strong></div>
+      <div class="s-block">하지만 우리는<br><strong>작게 대하지 <span class="accent">않았습니다</span></strong></div>
+    </div>
+    <div class="s-bottom"><img class="s-logo" src="../logo-light.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 04 · paper -->
+  <div class="slide paper">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">03 · 과정</div>
+    <div class="s-title">작은 일이라고<br>다르게 하지 않았습니다</div>
+    <div class="s-body">기획도, 레퍼런스도, 디테일도<br>큰 프로젝트와 같은 프로세스로 갔습니다.<br><br>이야기에 필요한 만큼 만들다 보니<br>30초는 <strong>1분이 넘는 영상</strong>이 되어 있었습니다.<br><br><strong>발주서가 아니라 <span class="accent">이야기가 분량을 정했습니다.</span></strong></div>
+    <div class="s-bottom"><img class="s-logo" src="../logo.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 05 · dark -->
+  <div class="slide dark">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">04 · 전환</div>
+    <div class="s-title">내부용 영상이<br>밖으로 나왔습니다</div>
+    <div class="s-body">사내 공유용으로 만든 영상을<br>클라이언트는 유튜브에 공개했습니다.<br><br>결과물이 마음에 들면<br>보여주고 싶어집니다.<br><br><strong>그게 <span class="accent">신뢰가 쌓이기 시작한 순간</span>이었습니다.</strong></div>
+    <div class="s-bottom"><img class="s-logo" src="../logo-light.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 06 · paper / Before·Now -->
+  <div class="slide paper">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">05 · 결과</div>
+    <div class="s-title">다음 연락은<br>CES였습니다</div>
+    <div class="s-compare">
+      <div class="s-row before"><span class="s-row-tag">FIRST</span><span class="s-row-text">30초 내부 R&amp;D 영상 한 편</span></div>
+      <div class="s-row now"><span class="s-row-tag">NEXT</span><span class="s-row-text">세계 최대 테크 행사, CES 프로젝트</span></div>
+    </div>
+    <div class="s-body" style="margin-top:64px;">물론 거저 얻은 일은 아닙니다.<br>제안서를 넣었고, 경쟁에서 이겼습니다.<br><br><strong>다만 그 경쟁의 출발선에 우리를 세워준 건<br><span class="accent">30초짜리 결과물</span>이었습니다.</strong></div>
+    <div class="s-bottom"><img class="s-logo" src="../logo.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 07 · dark -->
+  <div class="slide dark">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">06 · 관점</div>
+    <div class="s-title">작은 일은 테스트가 아니라<br><span class="accent">첫 페이지</span>입니다</div>
+    <div class="s-body">클라이언트는 작은 일의 결과만 보지 않습니다.<br>작은 일을 <strong>대하는 태도</strong>를 봅니다.<br><br><strong>예산의 크기는 우리가 정할 수 없지만,<br>일의 크기는 우리가 정합니다.</strong></div>
+    <div class="s-bottom"><img class="s-logo" src="../logo-light.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 08 · paper -->
+  <div class="slide paper">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">07 · 원칙</div>
+    <div class="s-title">작은 프로젝트를 대하는<br>플로바의 기준</div>
+    <div class="s-blocks">
+      <div class="s-block">예산이 아니라<br><strong>결과물의 기준에 맞춰 일합니다</strong></div>
+      <div class="s-block">분량은 발주서가 아니라<br><strong>이야기가 정합니다</strong></div>
+      <div class="s-block">모든 결과물은<br><strong>다음 프로젝트의 <span class="accent">포트폴리오</span>입니다</strong></div>
+    </div>
+    <div class="s-bottom"><img class="s-logo" src="../logo.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 09 · dark -->
+  <div class="slide dark">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <div class="s-label">08 · 제안</div>
+    <div class="s-title">작은 일 앞에서 고민하는<br>동료들에게</div>
+    <div class="s-body">모든 일에 자신을 갈아 넣자는<br>말은 아닙니다.<br>쥐어짜는 방식은 오래가지 못합니다.<br><br>다만 일의 크기는 그대로 두고,<br><strong>그 안에서 낼 수 있는 최대치를 낼 것.</strong><br><br><strong>그렇게 만든 30초가 다음 일을 데려옵니다.<br><span class="accent">우리가 그랬던 것처럼요.</span></strong></div>
+    <div class="s-bottom"><img class="s-logo" src="../logo-light.svg" alt="FLOVAH"><span class="s-page"></span></div>
+  </div>
+
+  <!-- 10 마무리 · dark -->
+  <div class="slide dark s-closing">
+    <div class="s-top"><span class="s-brand">Flovah Note</span><span class="s-issue">Jun.2026</span></div>
+    <div class="s-rule"></div>
+    <img class="s-closing-logo" src="../logo-light.svg" alt="FLOVAH">
+    <div class="s-closing-text">복잡한 이야기를<br>명료하게, 완벽하게.</div>
+    <div class="s-closing-url">www.flovah.com</div>
+    <div class="s-bottom"><span></span><span class="s-page"></span></div>
+  </div>
+
+
+  <!-- 업로드 노트 (캡션 · 태그 메모, PNG 내보내기 제외) -->
+  <div class="memo-card">
+    <div class="memo-head">
+      <span class="memo-title">Upload Note</span>
+      <button class="tb-btn memo-copy" data-target="caption">캡션 복사</button>
+      <button class="tb-btn memo-copy" data-target="tags">태그 복사</button>
+    </div>
+    <div class="memo-label">캡션</div>
+    <div class="memo-field caption" data-memo="caption" contenteditable="true">저희는 영업을 잘하는 회사가 아닙니다. 대신 30초짜리 영상에도 똑같은 공을 들입니다.<br>그 영상이 만들어준 신뢰가 우리를 더 큰 시장으로 데려갔고, 결과는 경쟁에서 증명했습니다.<br>작은 일을 어떻게 하는지가, 큰 일을 어떻게 할지 말해준다고 믿습니다.</div>
+    <div class="memo-label">해시태그</div>
+    <div class="memo-field tags" data-memo="tags" contenteditable="true">#브랜드콘텐츠 #영상제작 #CES #콘텐츠제작사 #스튜디오노트 #flovah</div>
+  </div>
+
+</div>
+
+<div class="single">
+  <div class="stage"></div>
+  <div class="single-nav">
+    <button class="tb-btn" id="btn-prev">←</button>
+    <span class="pg">01 / 10</span>
+    <button class="tb-btn" id="btn-next">→</button>
+    <button class="tb-btn" id="btn-save-cur">PNG 저장</button>
+  </div>
+</div>
+
+<div id="export-stage"></div>
+<script src="../logos-data.js"></script>
+<script src="../assets-embed/flovah-note-small-projects.js"></script>
+<script src="../viewer.js"></script>
+</body>
+</html>
