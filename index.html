@@ -222,7 +222,7 @@
       </a>
       <div class="card-body">
         <div class="card-desc">콘텐츠를 자산으로 만드는 아카이빙 방법. 체계적으로 쌓는 구조.</div>
-        <div class="card-date">2026-07-07 · 10 SLIDES</div>
+        <div class="card-date">2026-07-14 · 10 SLIDES</div>
         <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
       </div>
     </div>
@@ -411,11 +411,17 @@ document.querySelectorAll('.card-item').forEach((card) => {
     });
   }
   function persistOrder() {
-    try { localStorage.setItem(ORDER_KEY, JSON.stringify(items().map((c) => c.dataset.slug))); } catch (e) {}
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(items().map((c) => c.dataset.slug))); }
+    catch (e) { storageWarn(e); }
     renumber();
   }
+  let warned = false;
+  function storageWarn(e) {
+    if (warned) return; warned = true;
+    alert('순서를 저장하지 못했습니다.\n브라우저 저장 공간이 가득 찼을 수 있습니다.\n(원인: ' + (e && e.name ? e.name : e) + ')\n\n각 아티클에서 GitHub 저장을 한 번씩 누르면 임시 저장본이 정리되어 공간이 확보됩니다.');
+  }
   function persistHeld() {
-    try { localStorage.setItem(HELD_KEY, JSON.stringify(heldItems().map((c) => c.dataset.slug))); } catch (e) {}
+    try { localStorage.setItem(HELD_KEY, JSON.stringify(heldItems().map((c) => c.dataset.slug))); } catch (e) { storageWarn(e); }
     const n = heldItems().length;
     heldWrap.style.display = n ? '' : 'none';
     heldCount.textContent = n + '개';
