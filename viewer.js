@@ -555,9 +555,22 @@
     return res.json();
   }
 
-  /* UTF-8 안전 base64 인코딩/디코딩 */
-  const b64encode = (str) => btoa(String.fromCharCode(...new TextEncoder().encode(str)));
-  const b64decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), (ch) => ch.charCodeAt(0)));
+  /* UTF-8 안전 base64 인코딩/디코딩 (대용량 안전: 청크 단위 처리) */
+  const b64encode = (str) => {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    const CHUNK = 0x8000;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    return btoa(bin);
+  };
+  const b64decode = (b64) => {
+    const bin = atob(b64.replace(/\s/g, ''));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  };
 
   async function saveToGitHub() {
     let token = localStorage.getItem('flovah-gh-token');
@@ -574,7 +587,13 @@
     btn.disabled = true; btn.textContent = '저장 중...';
     try {
       const cur = await ghApi('GET', apiPath + '?ref=' + GH.branch, null, token);
-      let content = b64decode(cur.content);
+      let rawB64 = cur.content;
+      if (!rawB64) {
+        /* 1MB 이상 파일은 blob API로 내용을 받아야 함 */
+        const blob = await ghApi('GET', '/repos/' + GH.owner + '/' + GH.repo + '/git/blobs/' + cur.sha, null, token);
+        rawB64 = blob.content;
+      }
+      let content = b64decode(rawB64);
       const start = content.indexOf('<div class="deck">');
       const end = content.indexOf('<div class="single">');
       if (start === -1 || end === -1) throw new Error('파일 구조를 인식하지 못했습니다.');
