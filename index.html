@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLOVAH NOTE — Card News Hub</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* 허브 — 카드 그리드 */
+  .hub { max-width: 1240px; margin: 0 auto; padding: 72px 24px; }
+  .hub-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .hub-caption {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--flame);
+  }
+  .hub-meta { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: rgba(255,255,255,0.35); }
+  .hub h1 {
+    font-family: var(--body); font-size: clamp(34px, 5vw, 56px); font-weight: 700;
+    line-height: 1.1; margin-top: 28px; word-break: keep-all;
+  }
+  .hub-rule { height: 1px; background: var(--rule-dark); margin: 48px 0 40px; }
+
+  .cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 28px;
+  }
+  .card-item {
+    border: 1px solid var(--rule-dark); border-radius: 12px; overflow: hidden;
+    background: rgba(255,255,255,0.03);
+    transition: transform 220ms cubic-bezier(.2,.8,.2,1), border-color 220ms;
+  }
+  .card-item:hover { transform: translateY(-4px); border-color: rgba(255,107,53,0.5); }
+
+  /* 미니 표지 (다크 디폴트 · 선택된 배경 반영) */
+  .card-cover {
+    position: relative; display: block; aspect-ratio: 1080 / 1350;
+    background: var(--dark); text-decoration: none; overflow: hidden;
+  }
+  .card-cover img.cc-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .card-cover .cc-overlay { position: absolute; inset: 0; background: var(--dark); opacity: 0.82; }
+  .card-cover .cc-inner { position: absolute; inset: 0; padding: 9%; display: flex; flex-direction: column; }
+  .cc-brand {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--flame);
+  }
+  .cc-rule { height: 1px; background: rgba(255,255,255,0.14); margin-top: 12px; }
+  .cc-title {
+    margin-top: 18%; font-size: clamp(17px, 1.6vw, 21px); font-weight: 700;
+    line-height: 1.3; color: #f0f0f0; word-break: keep-all;
+  }
+  .cc-title .accent { color: var(--flame); }
+  .cc-foot {
+    margin-top: auto; display: flex; justify-content: space-between; align-items: center;
+  }
+  .cc-foot img { height: 13px; width: auto; }
+  .cc-foot .cc-no { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.4); }
+
+  /* 카드 하단 메타 */
+  .card-body { padding: 18px 18px 16px; }
+  .card-desc { font-size: 13.5px; line-height: 1.55; color: rgba(255,255,255,0.55); word-break: keep-all; }
+  .card-date { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: rgba(255,255,255,0.35); margin-top: 10px; }
+  .card-bgs { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .card-bgs .bgc-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.35);
+  }
+  .card-bgs .bg-thumb { width: 34px; height: 43px; }
+
+  /* 드래그 정렬 */
+  .card-item { cursor: grab; }
+  .card-item.dragging { opacity: 0.4; cursor: grabbing; }
+  .card-item.drag-over { border-color: var(--flame); }
+
+  /* 새 글 자리 */
+  .card-empty {
+    border: 1px dashed var(--rule-dark); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 1080 / 1560; color: rgba(255,255,255,0.25);
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+  }
+
+  /* 보류함 (드롭 존) */
+  .hold-zone {
+    border: 1px dashed rgba(255,107,53,0.4); border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; aspect-ratio: 1080 / 1560;
+    color: rgba(255,107,53,0.6); font-family: var(--mono);
+    font-size: 13px; letter-spacing: 0.1em;
+    transition: background 220ms cubic-bezier(.2,.8,.2,1), border-color 220ms;
+  }
+  .hold-zone .hz-icon { font-size: 26px; }
+  .hold-zone small { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; }
+  .hold-zone.drag-over { background: rgba(255,107,53,0.08); border-color: var(--flame); color: var(--flame); }
+
+  /* 보류 섹션 */
+  .held-wrap { margin-top: 64px; }
+  .held-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .held-rule { height: 1px; background: var(--rule-dark); margin: 20px 0 28px; }
+  #held-cards .card-item { opacity: 0.65; }
+  #held-cards .card-item:hover { opacity: 1; }
+  #held-cards .cc-no { visibility: hidden; }
+  .held-restore {
+    width: 100%; margin-top: 12px; padding: 9px 0;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    border: 1px solid var(--rule-dark); border-radius: 999px;
+    background: none; color: #f0f0f0; cursor: pointer;
+  }
+  .held-restore:hover { border-color: var(--flame); color: var(--flame); }
+</style>
+</head>
+<body>
+<div class="hub">
+  <div class="hub-top">
+    <span class="hub-caption">Flovah Note · Card News</span>
+    <span class="hub-meta">FLV · 2026</span>
+  </div>
+  <h1>브랜드 인사이트를<br>카드 뉴스로</h1>
+  <div class="hub-rule"></div>
+
+  <div class="cards">
+
+    <div class="card-item"
+         data-date="Jun.2026"
+         data-slug="flovah-note-tone-and-manner"
+         data-bgs="assets/cover-07-a.png,assets/cover-07-b.png,assets/cover-07-c.png">
+      <a class="card-cover" href="articles/tone-and-manner.html">
+        <img class="cc-bg" src="" alt="">
+        <div class="cc-overlay"></div>
+        <div class="cc-inner">
+          <span class="cc-brand">Flovah Note</span>
+          <div class="cc-rule"></div>
+          <div class="cc-title">브랜드에 톤이 없으면,<br><span class="accent">매번 처음부터<br>시작합니다</span></div>
+          <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jun.2026</span></div>
+        </div>
+      </a>
+      <div class="card-body">
+        <div class="card-desc">톤앤매너는 취향이 아니라 효율의 문제. 가이드의 필요성과 구성 요소.</div>
+        <div class="card-date">2026-06-16 · 10 SLIDES</div>
+        <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
+      </div>
+    </div>
+
+    <div class="card-item"
+         data-date="Jun.2026"
+         data-slug="flovah-note-small-projects"
+         data-bgs="assets/small-projects-a.png,assets/small-projects-b.png,assets/small-projects-c.png">
+      <a class="card-cover" href="articles/small-projects.html">
+        <img class="cc-bg" src="" alt="">
+        <div class="cc-overlay"></div>
+        <div class="cc-inner">
+          <span class="cc-brand">Flovah Note</span>
+          <div class="cc-rule"></div>
+          <div class="cc-title">큰 프로젝트는<br><span class="accent">작은 프로젝트가<br>데려옵니다</span></div>
+          <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jun.2026</span></div>
+        </div>
+      </a>
+      <div class="card-body">
+        <div class="card-desc">영업보다 정확한 영업. 30초 영상이 CES까지 간 이야기.</div>
+        <div class="card-date">2026-06-23 · 10 SLIDES</div>
+        <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
+      </div>
+    </div>
+
+    <div class="card-item"
+         data-date="Jun.2026"
+         data-slug="flovah-note-first-meeting"
+         data-bgs="assets/cover-08-a.png,assets/cover-08-b.png,assets/cover-08-c.png">
+      <a class="card-cover" href="articles/first-meeting.html">
+        <img class="cc-bg" src="" alt="">
+        <div class="cc-overlay"></div>
+        <div class="cc-inner">
+          <span class="cc-brand">Flovah Note</span>
+          <div class="cc-rule"></div>
+          <div class="cc-title">첫 미팅이<br><span class="accent">결과를<br>결정합니다</span></div>
+          <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jun.2026</span></div>
+        </div>
+      </a>
+      <div class="card-body">
+        <div class="card-desc">좋은 결과물은 좋은 시작에서 나옵니다. 제작사와의 첫 미팅에서 준비해야 할 것들.</div>
+        <div class="card-date">2026-06-30 · 10 SLIDES</div>
+        <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
+      </div>
+    </div>
+
+    <div class="card-item"
+         data-date="Jul.2026"
+         data-slug="flovah-note-think-first"
+         data-bgs="assets/think-first-a.png,assets/think-first-b.png,assets/think-first-c.png">
+      <a class="card-cover" href="articles/think-first.html">
+        <img class="cc-bg" src="" alt="">
+        <div class="cc-overlay"></div>
+        <div class="cc-inner">
+          <span class="cc-brand">Flovah Note</span>
+          <div class="cc-rule"></div>
+          <div class="cc-title">클라이언트보다<br><span class="accent">먼저 고민하면<br>생기는 일</span></div>
+          <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jul.2026</span></div>
+        </div>
+      </a>
+      <div class="card-body">
+        <div class="card-desc">CES 현장의 대화 하나가 플랫폼이 된 이야기. 함께 고민하는 동료가 되는 법.</div>
+        <div class="card-date">2026-07-07 · 10 SLIDES</div>
+        <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
+      </div>
+    </div>
+
+    <div class="card-item"
+         data-date="Jul.2026"
+         data-slug="flovah-note-content-archiving"
+         data-bgs="assets/cover-09-a.png,assets/cover-09-b.png,assets/cover-09-c.png">
+      <a class="card-cover" href="articles/content-archiving.html">
+        <img class="cc-bg" src="" alt="">
+        <div class="cc-overlay"></div>
+        <div class="cc-inner">
+          <span class="cc-brand">Flovah Note</span>
+          <div class="cc-rule"></div>
+          <div class="cc-title">만들고 끝나는 콘텐츠,<br><span class="accent">쌓이는 콘텐츠</span></div>
+          <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jul.2026</span></div>
+        </div>
+      </a>
+      <div class="card-body">
+        <div class="card-desc">콘텐츠를 자산으로 만드는 아카이빙 방법. 체계적으로 쌓는 구조.</div>
+        <div class="card-date">2026-07-07 · 10 SLIDES</div>
+        <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
+      </div>
+    </div>
+
+    <div class="card-item"
+         data-date="Jul.2026"
+         data-slug="flovah-note-channel-strategy"
+         data-bgs="assets/cover-10-a.png,assets/cover-10-b.png,assets/cover-10-c.png">
+      <a class="card-cover" href="articles/channel-strategy.html">
+        <img class="cc-bg" src="" alt="">
+        <div class="cc-overlay"></div>
+        <div class="cc-inner">
+          <span class="cc-brand">Flovah Note</span>
+          <div class="cc-rule"></div>
+          <div class="cc-title">인스타그램과 유튜브,<br><span class="accent">보는 방식이 다릅니다</span></div>
+          <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jul.2026</span></div>
+        </div>
+      </a>
+      <div class="card-body">
+        <div class="card-desc">같은 콘텐츠를 올려도 결과가 다른 이유. 채널별 시각 전략의 차이.</div>
+        <div class="card-date">2026-07-21 · 10 SLIDES</div>
+        <div class="card-bgs"><span class="bgc-label">표지 배경</span></div>
+      </div>
+    </div>
+
+    <div class="card-empty">+ NEXT NOTE</div>
+
+    <div class="hold-zone" id="hold-zone">
+      <span class="hz-icon">▣</span>
+      <span>보류함</span>
+      <small>카드를 여기로 드래그</small>
+    </div>
+
+  </div>
+
+  <div class="held-wrap" id="held-wrap" style="display:none">
+    <div class="held-head">
+      <span class="hub-caption">보류</span>
+      <span class="hub-meta" id="held-count"></span>
+    </div>
+    <div class="held-rule"></div>
+    <div class="cards" id="held-cards"></div>
+  </div>
+</div>
+
+<script>
+/* HEIC → JPEG 변환 (필요할 때만 라이브러리 로드) */
+async function normalizeImageFile(f) {
+  const isHeic = /\.heic$|\.heif$/i.test(f.name) || /heic|heif/i.test(f.type);
+  if (!isHeic) return f;
+  if (!window.heic2any) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      s.onload = res; s.onerror = () => rej(new Error('heic2any 로드 실패'));
+      document.head.appendChild(s);
+    });
+  }
+  return await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.9 });
+}
+
+/* 허브: 표지 배경 선택(생성 시안 3개 + 직접 업로드 + 없음) — 아티클 뷰어와 localStorage 공유 */
+document.querySelectorAll('.card-item').forEach((card) => {
+  const slug = card.dataset.slug;
+  const KEY = 'flovah-bg:' + slug;
+  const IMG_KEY = 'flovah-bgimg:' + slug;
+  const bgs = card.dataset.bgs.split(',');
+  const toArticlePath = (p) => '../' + p;
+  const state = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { return {}; } };
+  const save = (st) => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { alert('저장 공간이 부족합니다.'); } };
+
+  const holder = card.querySelector('.card-bgs');
+  const thumbs = document.createElement('div');
+  thumbs.className = 'bg-thumbs';
+  holder.appendChild(thumbs);
+
+  function coverPreview() {
+    const st = state();
+    const img = card.querySelector('.cc-bg');
+    const overlay = card.querySelector('.cc-overlay');
+    if (st.src === 'none') { img.style.display = 'none'; overlay.style.opacity = 1; return; }
+    img.style.display = '';
+    overlay.style.opacity = st.dim || 0.82;
+    if (st.src === '__custom__') img.src = localStorage.getItem(IMG_KEY) || bgs[0];
+    else if (st.src) img.src = st.src.replace(/^\.\.\//, '');
+    else img.src = bgs[0];
+  }
+
+  function rebuild() {
+    thumbs.innerHTML = '';
+    bgs.forEach((src, i) => {
+      const b = document.createElement('button');
+      b.className = 'bg-thumb'; b.title = '배경 ' + (i + 1);
+      b.innerHTML = '<img src="' + src + '" alt="">';
+      b.dataset.val = toArticlePath(src);
+      thumbs.appendChild(b);
+    });
+    const custom = localStorage.getItem(IMG_KEY);
+    if (custom) {
+      const b = document.createElement('button');
+      b.className = 'bg-thumb'; b.title = '업로드한 이미지';
+      b.innerHTML = '<img src="' + custom + '" alt=""><span class="bg-del" title="업로드한 이미지 삭제">×</span>';
+      b.dataset.val = '__custom__';
+      b.querySelector('.bg-del').addEventListener('click', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        if (!confirm('업로드한 이미지를 삭제할까요?')) return;
+        localStorage.removeItem(IMG_KEY);
+        const st = state();
+        if (st.src === '__custom__') { delete st.src; save(st); }
+        rebuild(); mark(); coverPreview();
+      });
+      thumbs.appendChild(b);
+    }
+    const none = document.createElement('button');
+    none.className = 'bg-thumb none'; none.textContent = '없음'; none.dataset.val = 'none';
+    thumbs.appendChild(none);
+
+    const up = document.createElement('button');
+    up.className = 'bg-thumb none'; up.textContent = '+'; up.title = '이미지 업로드';
+    thumbs.appendChild(up);
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*,.heic,.heif'; input.style.display = 'none';
+    thumbs.appendChild(input);
+    up.addEventListener('click', () => input.click());
+    input.addEventListener('change', async () => {
+      const raw = input.files[0]; if (!raw) return;
+      let f;
+      try { f = await normalizeImageFile(raw); }
+      catch (e) { alert('HEIC 변환에 실패했습니다. 인터넷 연결을 확인해주세요.'); return; }
+      const fr = new FileReader();
+      fr.onload = () => {
+        const im = new Image();
+        im.onload = () => {
+          const max = 1400, sc = Math.min(1, max / Math.max(im.width, im.height));
+          const cv = document.createElement('canvas');
+          cv.width = Math.round(im.width * sc); cv.height = Math.round(im.height * sc);
+          cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+          try { localStorage.setItem(IMG_KEY, cv.toDataURL('image/jpeg', 0.85)); }
+          catch (e) { alert('이미지가 너무 큽니다. 더 작은 파일로 시도해주세요.'); return; }
+          const st = state(); st.src = '__custom__'; save(st);
+          rebuild(); mark(); coverPreview();
+        };
+        im.src = fr.result;
+      };
+      fr.readAsDataURL(f);
+    });
+
+    thumbs.querySelectorAll('.bg-thumb[data-val]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const st = state(); st.src = b.dataset.val; save(st);
+        mark(); coverPreview();
+      });
+    });
+  }
+  function mark() {
+    const sel = state().src || toArticlePath(bgs[0]);
+    thumbs.querySelectorAll('.bg-thumb[data-val]').forEach((b) =>
+      b.classList.toggle('selected', b.dataset.val === sel));
+  }
+  rebuild(); mark(); coverPreview();
+});
+
+/* 드래그로 카드 순서 변경 + 번호(NO.) 자동 재정렬 + 보류함
+   바뀐 순서는 아티클 페이지의 NO. 표기에도 자동 반영됨 */
+(function () {
+  const ORDER_KEY = 'flovah-hub-order';
+  const HELD_KEY = 'flovah-hub-held';
+  const grid = document.querySelector('.cards');
+  const empty = grid.querySelector('.card-empty');
+  const holdZone = document.getElementById('hold-zone');
+  const heldWrap = document.getElementById('held-wrap');
+  const heldGrid = document.getElementById('held-cards');
+  const heldCount = document.getElementById('held-count');
+  const items = () => [...grid.querySelectorAll('.card-item')];
+  const heldItems = () => [...heldGrid.querySelectorAll('.card-item')];
+
+  function readList(key) {
+    try { return JSON.parse(localStorage.getItem(key) || 'null') || []; } catch (e) { return []; }
+  }
+
+  function renumber() {
+    /* 날짜 표기(Jun.2026 등)로 전환: 순서가 바뀌어도 발행 월은 고정 */
+    [...document.querySelectorAll('.card-item')].forEach((c) => {
+      const el = c.querySelector('.cc-no');
+      if (el && c.dataset.date) el.textContent = c.dataset.date;
+    });
+  }
+  function persistOrder() {
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(items().map((c) => c.dataset.slug))); } catch (e) {}
+    renumber();
+  }
+  function persistHeld() {
+    try { localStorage.setItem(HELD_KEY, JSON.stringify(heldItems().map((c) => c.dataset.slug))); } catch (e) {}
+    const n = heldItems().length;
+    heldWrap.style.display = n ? '' : 'none';
+    heldCount.textContent = n + '개';
+  }
+
+  /* 보류로 이동 / 복원 */
+  function holdCard(card) {
+    heldGrid.appendChild(card);
+    if (!card.querySelector('.held-restore')) {
+      const btn = document.createElement('button');
+      btn.className = 'held-restore';
+      btn.textContent = '목록으로 복원';
+      btn.addEventListener('click', () => restoreCard(card));
+      card.querySelector('.card-body').appendChild(btn);
+    }
+    persistHeld(); persistOrder();
+  }
+  function restoreCard(card) {
+    card.querySelector('.held-restore')?.remove();
+    grid.insertBefore(card, empty);
+    persistHeld(); persistOrder();
+  }
+
+  /* 저장된 보류 → 순서 적용 */
+  readList(HELD_KEY).forEach((slug) => {
+    const el = items().find((c) => c.dataset.slug === slug);
+    if (el) holdCard(el);
+  });
+  readList(ORDER_KEY).forEach((slug) => {
+    const el = items().find((c) => c.dataset.slug === slug);
+    if (el) grid.insertBefore(el, empty);
+  });
+
+  /* 드래그 */
+  let dragged = null;
+  [...document.querySelectorAll('.card-item')].forEach((c) => {
+    c.setAttribute('draggable', 'true');
+    c.querySelectorAll('a, img').forEach((el) => el.setAttribute('draggable', 'false'));
+    c.addEventListener('dragstart', (e) => {
+      dragged = c; c.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', c.dataset.slug);
+    });
+    c.addEventListener('dragend', () => {
+      c.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach((x) => x.classList.remove('drag-over'));
+    });
+    c.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (c !== dragged && grid.contains(c) && grid.contains(dragged)) c.classList.add('drag-over');
+    });
+    c.addEventListener('dragleave', () => c.classList.remove('drag-over'));
+    c.addEventListener('drop', (e) => {
+      e.preventDefault();
+      c.classList.remove('drag-over');
+      if (!dragged || dragged === c) return;
+      if (!grid.contains(c)) return; /* 보류 영역 안에서는 정렬 없음 */
+      if (!grid.contains(dragged)) { /* 보류 카드를 목록 카드 위에 드롭 → 복원 후 그 위치로 */
+        dragged.querySelector('.held-restore')?.remove();
+      }
+      const all = items();
+      const from = all.indexOf(dragged), to = all.indexOf(c);
+      grid.insertBefore(dragged, from !== -1 && from < to ? c.nextSibling : c);
+      persistHeld(); persistOrder();
+    });
+  });
+
+  /* 보류함 드롭 존 */
+  holdZone.addEventListener('dragover', (e) => { e.preventDefault(); holdZone.classList.add('drag-over'); });
+  holdZone.addEventListener('dragleave', () => holdZone.classList.remove('drag-over'));
+  holdZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    holdZone.classList.remove('drag-over');
+    if (dragged && grid.contains(dragged)) holdCard(dragged);
+  });
+
+  renumber(); persistHeld();
+})();
+</script>
+</body>
+</html>
