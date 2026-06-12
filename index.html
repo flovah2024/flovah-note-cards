@@ -109,13 +109,21 @@
     background: none; color: #f0f0f0; cursor: pointer;
   }
   .held-restore:hover { border-color: var(--flame); color: var(--flame); }
+  .hub-gh-btn {
+    margin-left: 14px; padding: 7px 14px; font: 11px/1 'Space Mono', monospace;
+    letter-spacing: 0.06em; color: rgba(255,255,255,0.65); background: none;
+    border: 1px solid rgba(255,255,255,0.22); border-radius: 99px; cursor: pointer;
+    transition: all 0.22s cubic-bezier(.2,.8,.2,1); vertical-align: middle;
+  }
+  .hub-gh-btn:hover { border-color: var(--flame); color: var(--flame); }
+  .hub-gh-btn:disabled { opacity: 0.5; cursor: default; }
 </style>
 </head>
 <body>
 <div class="hub">
   <div class="hub-top">
     <span class="hub-caption">Flovah Note · Card News</span>
-    <span class="hub-meta">FLV · 2026</span>
+    <span class="hub-meta">FLV · 2026 <button class="hub-gh-btn" id="hub-gh-save">GitHub 저장</button></span>
   </div>
   <h1>브랜드 인사이트를<br>카드 뉴스로</h1>
   <div class="hub-rule"></div>
@@ -445,12 +453,23 @@ document.querySelectorAll('.card-item').forEach((card) => {
     persistHeld(); persistOrder();
   }
 
-  /* 저장된 보류 → 순서 적용 */
-  readList(HELD_KEY).forEach((slug) => {
+  /* GitHub 저장 시 아래 한 줄이 갱신됨 (파일에 기록된 기본 순서/보류) */
+  const FILE_STATE = {"order":[],"held":[]}; /* GH-STATE */
+
+  /* 저장된 보류 → 순서 적용 (브라우저 저장본이 있으면 우선, 없으면 파일 기록 사용) */
+  function readListOr(key, fb) {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fb || [];
+    try { return JSON.parse(raw) || []; } catch (e) { return []; }
+  }
+  /* 두 목록을 먼저 읽어둠 (보류 복원 중에 순서가 다시 저장되며 덮어쓰는 것 방지) */
+  const initHeld = readListOr(HELD_KEY, FILE_STATE.held);
+  const initOrder = readListOr(ORDER_KEY, FILE_STATE.order);
+  initHeld.forEach((slug) => {
     const el = items().find((c) => c.dataset.slug === slug);
     if (el) holdCard(el);
   });
-  readList(ORDER_KEY).forEach((slug) => {
+  initOrder.forEach((slug) => {
     const el = items().find((c) => c.dataset.slug === slug);
     if (el) grid.insertBefore(el, empty);
   });
@@ -499,6 +518,85 @@ document.querySelectorAll('.card-item').forEach((card) => {
   });
 
   renumber(); persistHeld();
+
+  /* ── 허브 GitHub 저장: 현재 카드 순서/보류 상태를 index.html에 커밋 ── */
+  const GH = { owner: 'flovah2024', repo: 'flovah-note-cards', branch: 'main' };
+  const b64encode = (str) => {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  };
+  const b64decode = (b64) => {
+    const bin = atob(b64.replace(/\s/g, ''));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  };
+  async function ghApi(method, path, body, token) {
+    const res = await fetch('https://api.github.com' + path, {
+      method,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) throw new Error('GitHub API ' + res.status + ': ' + (await res.text()).slice(0, 200));
+    return res.json();
+  }
+  async function saveHubToGitHub() {
+    let token = localStorage.getItem('flovah-gh-token');
+    if (!token) {
+      token = prompt('GitHub 토큰(PAT)을 입력해주세요.\n한 번만 입력하면 이 브라우저에 저장됩니다.');
+      if (!token) return;
+      token = token.trim();
+      try { localStorage.setItem('flovah-gh-token', token); } catch (e) {}
+    }
+    const btn = document.getElementById('hub-gh-save');
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = '저장 중...';
+    const state = { order: items().map((c) => c.dataset.slug), held: heldItems().map((c) => c.dataset.slug) };
+    try {
+      const apiPath = '/repos/' + GH.owner + '/' + GH.repo + '/contents/index.html';
+      const cur = await ghApi('GET', apiPath + '?ref=' + GH.branch, null, token);
+      let rawB64 = cur.content;
+      if (!rawB64) {
+        const blob = await ghApi('GET', '/repos/' + GH.owner + '/' + GH.repo + '/git/blobs/' + cur.sha, null, token);
+        rawB64 = blob.content;
+      }
+      let content = b64decode(rawB64);
+      const re = /const FILE_STATE = \{[^;]*\}; \/\* GH-STATE \*\//;
+      if (!re.test(content)) throw new Error('파일에서 상태 기록 위치를 찾지 못했습니다.');
+      content = content.replace(re, 'const FILE_STATE = ' + JSON.stringify(state) + '; /* GH-STATE */');
+      await ghApi('PUT', apiPath, {
+        message: '허브 카드 순서 업데이트 (' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ')',
+        content: b64encode(content),
+        sha: cur.sha,
+        branch: GH.branch,
+      }, token);
+      /* 저장된 상태와 브라우저 상태를 일치시켜 둠 */
+      try {
+        localStorage.setItem(ORDER_KEY, JSON.stringify(state.order));
+        localStorage.setItem(HELD_KEY, JSON.stringify(state.held));
+      } catch (e) {}
+      btn.textContent = '저장 완료';
+      alert('카드 순서가 GitHub에 저장되었습니다.\n사이트에는 약 1분 안에 반영됩니다.');
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+    } catch (e) {
+      btn.textContent = orig; btn.disabled = false;
+      if (/401|403/.test(e.message)) {
+        localStorage.removeItem('flovah-gh-token');
+        alert('토큰이 올바르지 않거나 권한이 없습니다. 다시 시도하면 토큰을 새로 입력할 수 있습니다.');
+      } else {
+        alert('저장 실패: ' + e.message);
+      }
+    }
+  }
+  document.getElementById('hub-gh-save').addEventListener('click', saveHubToGitHub);
 })();
 </script>
 </body>
