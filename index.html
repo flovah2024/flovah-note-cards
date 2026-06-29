@@ -411,7 +411,20 @@ document.querySelectorAll('.card-item').forEach((card) => {
     thumbs.querySelectorAll('.bg-thumb[data-val]').forEach((b) =>
       b.classList.toggle('selected', b.dataset.val === sel));
   }
-  rebuild(); mark(); coverPreview();
+
+  /* 아티클에서 편집한 표지 제목을 허브 미니 표지에 반영 (브라우저 편집본 공유) */
+  function syncTitle() {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem('flovah-cards:' + slug) || 'null'); }
+    catch (e) { return; }
+    if (!saved || !Array.isArray(saved.slides) || !saved.slides[0]) return;
+    const doc = new DOMParser().parseFromString(saved.slides[0].html, 'text/html');
+    const t = doc.querySelector('.s-cover-title');
+    const cc = card.querySelector('.cc-title');
+    if (t && cc) cc.innerHTML = t.innerHTML;
+  }
+
+  rebuild(); mark(); coverPreview(); syncTitle();
 });
 
 /* 드래그로 카드 순서 변경 + 번호(NO.) 자동 재정렬 + 보류함
