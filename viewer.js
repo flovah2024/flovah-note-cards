@@ -45,11 +45,20 @@
     }
   } catch (e) { /* 복원 실패 시 원본 유지 */ }
 
+  /* 과거에 편집 모드 상태로 저장된 편집본은 contenteditable 속성이 함께
+     저장돼 있을 수 있다 → 불러온 뒤 모두 제거해 편집 버튼 없이는 수정 불가 */
+  slides.forEach((s) => s.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable')));
+
   function persist() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
         version: contentVersion,
-        slides: slides.map((s) => ({ cls: s.className, html: s.innerHTML })),
+        slides: slides.map((s) => {
+          /* 저장 시 contenteditable 속성은 빼고 순수 내용만 보관 */
+          const c = s.cloneNode(true);
+          c.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+          return { cls: s.className, html: c.innerHTML };
+        }),
         savedAt: Date.now(),
       }));
     } catch (e) { /* 저장 공간 부족 등은 조용히 무시 */ }
@@ -426,6 +435,11 @@
     frame.appendChild(slides[cur]);
     stagedIdx = cur;
     stage.appendChild(frame);
+    /* 개별 보기에서도 편집 가능 여부는 '편집' 버튼 상태에 따른다 */
+    slides[cur].querySelectorAll(EDITABLE).forEach((el) => {
+      if (editing) el.setAttribute('contenteditable', 'true');
+      else el.removeAttribute('contenteditable');
+    });
     pgLabel.textContent = String(cur + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
     requestAnimationFrame(fit);
   }
