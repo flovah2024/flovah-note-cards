@@ -465,9 +465,12 @@ document.querySelectorAll('.card-item').forEach((card) => {
       if (el && c.dataset.date) el.textContent = c.dataset.date;
     });
   }
+  let initializing = true; /* 복원 중에는 저장하지 않음 (덮어쓰기 방지) */
   function persistOrder() {
-    try { localStorage.setItem(ORDER_KEY, JSON.stringify(items().map((c) => c.dataset.slug))); }
-    catch (e) { storageWarn(e); }
+    if (!initializing) {
+      try { localStorage.setItem(ORDER_KEY, JSON.stringify(items().map((c) => c.dataset.slug))); }
+      catch (e) { storageWarn(e); }
+    }
     renumber();
   }
   let warned = false;
@@ -476,7 +479,9 @@ document.querySelectorAll('.card-item').forEach((card) => {
     alert('순서를 저장하지 못했습니다.\n브라우저 저장 공간이 가득 찼을 수 있습니다.\n(원인: ' + (e && e.name ? e.name : e) + ')\n\n각 아티클에서 GitHub 저장을 한 번씩 누르면 임시 저장본이 정리되어 공간이 확보됩니다.');
   }
   function persistHeld() {
-    try { localStorage.setItem(HELD_KEY, JSON.stringify(heldItems().map((c) => c.dataset.slug))); } catch (e) { storageWarn(e); }
+    if (!initializing) {
+      try { localStorage.setItem(HELD_KEY, JSON.stringify(heldItems().map((c) => c.dataset.slug))); } catch (e) { storageWarn(e); }
+    }
     const n = heldItems().length;
     heldWrap.style.display = n ? '' : 'none';
     heldCount.textContent = n + '개';
@@ -503,23 +508,36 @@ document.querySelectorAll('.card-item').forEach((card) => {
   /* GitHub 저장 시 아래 한 줄이 갱신됨 (파일에 기록된 기본 순서/보류) */
   const FILE_STATE = {"order":["flovah-note-think-first","flovah-note-small-projects"],"held":["flovah-note-tone-and-manner","flovah-note-channel-strategy","flovah-note-content-archiving","flovah-note-first-meeting"]}; /* GH-STATE */
 
-  /* 저장된 보류 → 순서 적용 (브라우저 저장본이 있으면 우선, 없으면 파일 기록 사용) */
-  function readListOr(key, fb) {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return fb || [];
-    try { return JSON.parse(raw) || []; } catch (e) { return []; }
-  }
-  /* 두 목록을 먼저 읽어둠 (보류 복원 중에 순서가 다시 저장되며 덮어쓰는 것 방지) */
-  const initHeld = readListOr(HELD_KEY, FILE_STATE.held);
-  const initOrder = readListOr(ORDER_KEY, FILE_STATE.order);
-  initHeld.forEach((slug) => {
-    const el = items().find((c) => c.dataset.slug === slug);
-    if (el) holdCard(el);
-  });
-  initOrder.forEach((slug) => {
-    const el = items().find((c) => c.dataset.slug === slug);
+  /* ── 순서/보류 복원 ──────────────────────────────
+     localStorage(브라우저 저장)와 FILE_STATE(파일 기록)를 섞지 않고
+     한쪽을 통째로 사용한다. localStorage가 있으면 그것을 우선. */
+  function parseList(raw) { try { return JSON.parse(raw) || []; } catch (e) { return []; } }
+  const allCards = items();                       /* 시작 시 모든 카드는 목록에 있음 */
+  const findCard = (slug) => allCards.find((c) => c.dataset.slug === slug);
+  const lsOrder = localStorage.getItem(ORDER_KEY);
+  const lsHeld = localStorage.getItem(HELD_KEY);
+  const useLS = lsOrder !== null || lsHeld !== null;
+  const savedOrder = useLS ? parseList(lsOrder) : (FILE_STATE.order || []);
+  const savedHeld = useLS ? parseList(lsHeld) : (FILE_STATE.held || []);
+  const heldSet = new Set(savedHeld);
+
+  /* (1) 보류 카드부터 옮긴다 */
+  savedHeld.forEach((slug) => { const el = findCard(slug); if (el) holdCard(el); });
+
+  /* (2) 목록 순서를 재구성: 저장된 순서 → 그 외 새 카드는 뒤에 붙임 */
+  const ordered = savedOrder.filter((s) => !heldSet.has(s) && findCard(s));
+  const orderedSet = new Set(ordered);
+  const leftovers = allCards
+    .map((c) => c.dataset.slug)
+    .filter((s) => !heldSet.has(s) && !orderedSet.has(s)); /* 저장 당시 없던 새 카드 */
+  ordered.concat(leftovers).forEach((slug) => {
+    const el = findCard(slug);
     if (el) grid.insertBefore(el, empty);
   });
+
+  /* (3) 복원 끝 → 이제부터 저장 허용, 화해된 전체 상태를 한 번 기록 */
+  initializing = false;
+  persistHeld(); persistOrder();
 
   /* 드래그 */
   let dragged = null;
