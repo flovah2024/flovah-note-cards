@@ -203,7 +203,7 @@
         <div class="cc-inner">
           <span class="cc-brand">Flovah Note</span>
           <div class="cc-rule"></div>
-          <div class="cc-title">클라이언트보다<br><span class="accent">먼저 고민하면<br>생기는 일</span></div>
+          <div class="cc-title">클라이언트보다<br><span class="accent">한 발 앞서<br>고민하기</span></div>
           <div class="cc-foot"><img src="logo-light.svg" alt="FLOVAH"><span class="cc-no">Jul.2026</span></div>
         </div>
       </a>
@@ -412,16 +412,29 @@ document.querySelectorAll('.card-item').forEach((card) => {
       b.classList.toggle('selected', b.dataset.val === sel));
   }
 
-  /* 아티클에서 편집한 표지 제목을 허브 미니 표지에 반영 (브라우저 편집본 공유) */
-  function syncTitle() {
-    let saved;
-    try { saved = JSON.parse(localStorage.getItem('flovah-cards:' + slug) || 'null'); }
-    catch (e) { return; }
-    if (!saved || !Array.isArray(saved.slides) || !saved.slides[0]) return;
-    const doc = new DOMParser().parseFromString(saved.slides[0].html, 'text/html');
+  /* 아티클에서 편집한 표지 제목을 허브 미니 표지에 반영 */
+  function applyTitle(slideHtml) {
+    const doc = new DOMParser().parseFromString(slideHtml, 'text/html');
     const t = doc.querySelector('.s-cover-title');
     const cc = card.querySelector('.cc-title');
     if (t && cc) cc.innerHTML = t.innerHTML;
+  }
+  async function syncTitle() {
+    /* (1) 브라우저에 남은 미저장 편집본이 있으면 그것을 우선 반영 */
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem('flovah-cards:' + slug) || 'null'); } catch (e) {}
+    if (saved && Array.isArray(saved.slides) && saved.slides[0]) { applyTitle(saved.slides[0].html); return; }
+    /* (2) 없으면 아티클 파일에서 표지 제목을 직접 읽어와 동기화 (GitHub 저장된 최종본) */
+    const href = card.querySelector('.card-cover')?.getAttribute('href');
+    if (!href) return;
+    try {
+      const res = await fetch(href, { cache: 'no-store' });
+      if (!res.ok) return;
+      const m = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const t = m.querySelector('.s-cover-title');
+      const cc = card.querySelector('.cc-title');
+      if (t && cc) cc.innerHTML = t.innerHTML;
+    } catch (e) { /* 파일 접근 실패 시 고정 제목 유지 */ }
   }
 
   rebuild(); mark(); coverPreview(); syncTitle();
