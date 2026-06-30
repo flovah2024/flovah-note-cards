@@ -473,7 +473,10 @@
     btnMobile.className = 'tb-btn'; btnMobile.id = 'btn-mobile';
     btnMobile.textContent = '모바일';
     btnSingle.parentNode.insertBefore(btnMobile, btnSingle.nextSibling);
-    btnMobile.addEventListener('click', () => setMobile(true));
+    btnMobile.addEventListener('click', () => {
+      if (document.body.classList.contains('mode-mobile')) setMode(false); /* 끄면 전체 보기로 */
+      else setMobile(true);
+    });
   })();
 
   function buildMobile() {
@@ -495,7 +498,8 @@
     });
     fitMobile();
     mfTrack.scrollLeft = 0;
-    updateDots();
+    setActiveDot(0);
+    setupObserver();
   }
   function fitMobile() {
     const vw = mobileFeed.clientWidth || window.innerWidth;
@@ -508,10 +512,27 @@
       if (slide) slide.style.transform = 'scale(' + scale + ')';
     });
   }
+  function setActiveDot(i) {
+    mfDots.querySelectorAll('.mf-dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  }
   function updateDots() {
     const cellW = mfTrack.clientWidth || 1;
-    const idx = Math.round(mfTrack.scrollLeft / cellW);
-    mfDots.querySelectorAll('.mf-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+    setActiveDot(Math.round(mfTrack.scrollLeft / cellW));
+  }
+  /* 어느 장이 화면 중앙에 있는지 안정적으로 감지 → 점 인디케이터 갱신 */
+  let mfObserver = null;
+  function setupObserver() {
+    if (mfObserver) mfObserver.disconnect();
+    mfObserver = new IntersectionObserver((entries) => {
+      const cells = Array.prototype.slice.call(mfTrack.querySelectorAll('.mf-cell'));
+      entries.forEach((en) => {
+        if (en.isIntersecting && en.intersectionRatio >= 0.55) {
+          const i = cells.indexOf(en.target);
+          if (i >= 0) setActiveDot(i);
+        }
+      });
+    }, { root: mfTrack, threshold: [0.55] });
+    mfTrack.querySelectorAll('.mf-cell').forEach((c) => mfObserver.observe(c));
   }
   let mfScrollTimer = null;
   mfTrack.addEventListener('scroll', () => {
@@ -700,11 +721,14 @@
         sha: cur.sha,
         branch: GH.branch,
       }, token);
-      /* 파일이 원본이 됐으니 이 브라우저의 임시 저장본 정리 */
-      localStorage.removeItem(STORE_KEY);
-      localStorage.removeItem(MEMO_KEY);
+      /* 저장 성공: 브라우저 편집본은 그대로 둔다.
+         (사이트 갱신에 ~1분이 걸리므로, 그 사이 새로고침해도 내 편집이 유지되도록) */
+      try {
+        const keep = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+        if (keep) { keep.version = contentVersion; localStorage.setItem(STORE_KEY, JSON.stringify(keep)); }
+      } catch (e) {}
       btn.textContent = '저장 완료';
-      alert('GitHub에 저장되었습니다.\n사이트에는 약 1분 안에 반영됩니다.');
+      alert('GitHub에 저장되었습니다.\n사이트 반영에는 약 1분이 걸리며, 그동안에도 내 편집 내용은 그대로 유지됩니다.');
       setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
     } catch (e) {
       btn.textContent = orig; btn.disabled = false;

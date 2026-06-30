@@ -380,3 +380,7 @@ body.mode-mobile .mobile-feed { display: block; }
   transition: background 0.2s, transform 0.2s;
 }
 .mf-dot.active { background: var(--flame); transform: scale(1.25); }
+
+/* 모바일 모드: 툴바에서 '모바일' 버튼만 남기고 나머지 숨김 */
+body.mode-mobile .toolbar > *:not(#btn-mobile) { display: none; }
+body.mode-mobile .toolbar { justify-content: center; }
