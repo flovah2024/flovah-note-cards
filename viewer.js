@@ -444,6 +444,8 @@
     requestAnimationFrame(fit);
   }
   function setMode(single) {
+    document.body.classList.remove('mode-mobile');
+    if (btnMobile) btnMobile.classList.remove('active');
     document.body.classList.toggle('mode-single', single);
     btnGrid.classList.toggle('active', !single);
     btnSingle.classList.toggle('active', single);
@@ -454,6 +456,86 @@
   btnSingle.addEventListener('click', () => setMode(true));
   document.getElementById('btn-prev').addEventListener('click', () => showSingle(cur - 1));
   document.getElementById('btn-next').addEventListener('click', () => showSingle(cur + 1));
+
+  /* ── 6.5 모바일 모드 (인스타그램 캐러셀처럼 좌우 스와이프) ── */
+  const mobileFeed = document.createElement('div');
+  mobileFeed.className = 'mobile-feed';
+  mobileFeed.innerHTML = '<div class="mf-track"></div><div class="mf-dots"></div>';
+  document.body.appendChild(mobileFeed);
+  const mfTrack = mobileFeed.querySelector('.mf-track');
+  const mfDots = mobileFeed.querySelector('.mf-dots');
+
+  /* 툴바에 모바일 버튼 추가 (개별 보기 옆) */
+  let btnMobile = null;
+  (function addMobileButton() {
+    if (!btnSingle) return;
+    btnMobile = document.createElement('button');
+    btnMobile.className = 'tb-btn'; btnMobile.id = 'btn-mobile';
+    btnMobile.textContent = '모바일';
+    btnSingle.parentNode.insertBefore(btnMobile, btnSingle.nextSibling);
+    btnMobile.addEventListener('click', () => setMobile(true));
+  })();
+
+  function buildMobile() {
+    mfTrack.innerHTML = '';
+    slides.forEach((s) => {
+      const cell = document.createElement('div'); cell.className = 'mf-cell';
+      const sc = document.createElement('div'); sc.className = 'mf-scaler';
+      const c = s.cloneNode(true);
+      c.style.transform = '';
+      c.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+      sc.appendChild(c); cell.appendChild(sc); mfTrack.appendChild(cell);
+    });
+    /* 점 인디케이터 */
+    mfDots.innerHTML = '';
+    slides.forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'mf-dot' + (i === 0 ? ' active' : '');
+      mfDots.appendChild(d);
+    });
+    fitMobile();
+    mfTrack.scrollLeft = 0;
+    updateDots();
+  }
+  function fitMobile() {
+    const vw = mobileFeed.clientWidth || window.innerWidth;
+    const cardW = Math.min(vw - 24, 460);
+    const scale = cardW / 1080;
+    mfTrack.querySelectorAll('.mf-scaler').forEach((sc) => {
+      sc.style.width = cardW + 'px';
+      sc.style.height = (1350 * scale) + 'px';
+      const slide = sc.querySelector('.slide');
+      if (slide) slide.style.transform = 'scale(' + scale + ')';
+    });
+  }
+  function updateDots() {
+    const cellW = mfTrack.clientWidth || 1;
+    const idx = Math.round(mfTrack.scrollLeft / cellW);
+    mfDots.querySelectorAll('.mf-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+  }
+  let mfScrollTimer = null;
+  mfTrack.addEventListener('scroll', () => {
+    clearTimeout(mfScrollTimer);
+    mfScrollTimer = setTimeout(updateDots, 60);
+  });
+  window.addEventListener('resize', () => { if (document.body.classList.contains('mode-mobile')) fitMobile(); });
+
+  function setMobile(on) {
+    document.body.classList.toggle('mode-mobile', on);
+    if (btnMobile) btnMobile.classList.toggle('active', on);
+    if (on) {
+      document.body.classList.remove('mode-single');
+      btnGrid.classList.remove('active');
+      btnSingle.classList.remove('active');
+      returnStaged();
+      buildMobile();
+    }
+  }
+
+  /* 핸드폰 등 좁은 화면에서는 모바일 모드로 시작 */
+  if (window.matchMedia('(max-width: 700px)').matches) {
+    requestAnimationFrame(() => setMobile(true));
+  }
 
   /* ── 7. PNG 저장 ─────────────────────────────────── */
   const exportStage = document.getElementById('export-stage');

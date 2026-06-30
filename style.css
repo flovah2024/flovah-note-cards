@@ -330,3 +330,53 @@ body.mode-single .memo-card { display: none; }
 
 /* 내보내기용 무대 (화면 밖) */
 #export-stage { position: fixed; left: -99999px; top: 0; }
+
+/* ── 모바일 모드 (인스타그램 캐러셀) ───────────────────── */
+.mobile-feed { display: none; }
+body.mode-mobile .deck,
+body.mode-mobile .single { display: none !important; }
+body.mode-mobile .mobile-feed { display: block; }
+.mobile-feed {
+  width: 100%;
+  padding: 8px 0 4px;
+}
+.mf-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.mf-track::-webkit-scrollbar { display: none; }
+.mf-cell {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0;
+}
+.mf-scaler {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+.mf-scaler .slide {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: top left;
+}
+.mf-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 0 6px;
+}
+.mf-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(154,154,158,0.4);
+  transition: background 0.2s, transform 0.2s;
+}
+.mf-dot.active { background: var(--flame); transform: scale(1.25); }
